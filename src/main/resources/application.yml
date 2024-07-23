@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:file:./h2db
+    username: root
+    password: 123456
+  #        driver-class-name: com.mysql.cj.jdbc.Driver
+  #        url: jdbc:mysql://kimmking.cn:3306/midconfig?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+  #        username: root
+  #        password:
+  sql:
+    init:
+      schema-locations: classpath:db.sql
+      mode: always
+
+  h2:
+    console:
+      path: /h2
+      enabled: true
+      settings:
+        web-allow-others: true
+
+mybatis:
+  #  mapper-locations: classpath:mapper/*Mapper.xml
+  type-aliases-package: com.midnight.sharding.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    default-statement-timeout: 5000
