@@ -1,31 +1,21 @@
-server:
-  port: 8080
-
 spring:
-  datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:file:./h2db
-    username: root
-    password: 123456
-  #        driver-class-name: com.mysql.cj.jdbc.Driver
-  #        url: jdbc:mysql://kimmking.cn:3306/midconfig?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-  #        username: root
-  #        password:
-  sql:
-    init:
-      schema-locations: classpath:db.sql
-      mode: always
+  application:
+    name: midnight-sharding
+  sharding:
+    datasources:
+      ds0:
+        url: jdbc:mysql://127.0.0.1:3306/ds0?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+        username: root
+        password: 123456
+      ds1:
+        url: jdbc:mysql://127.0.0.1:3306/ds1?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+        username: root
+        password: 123456
 
-  h2:
-    console:
-      path: /h2
-      enabled: true
-      settings:
-        web-allow-others: true
 
 mybatis:
   #  mapper-locations: classpath:mapper/*Mapper.xml
-  type-aliases-package: com.midnight.sharding.entity
+  type-aliases-package: com.midnight.sharding.demo
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     default-statement-timeout: 5000

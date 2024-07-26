@@ -1,4 +1,4 @@
-package com.midnight.sharding.interceptor;
+package com.midnight.sharding;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.executor.statement.StatementHandler;
