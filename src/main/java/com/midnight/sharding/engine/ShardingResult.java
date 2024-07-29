@@ -1,4 +1,4 @@
-package com.midnight.sharding;
+package com.midnight.sharding.engine;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,4 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ShardingResult {
     private String targetDataSourceName;
+    private String targetSqlStatement;
+    private Object[] parameters;
 }

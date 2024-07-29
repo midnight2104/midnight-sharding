@@ -1,4 +1,4 @@
-package com.midnight.sharding;
+package com.midnight.sharding.mybatis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
         type = StatementHandler.class,
         method = "prepare",
         args = {java.sql.Connection.class, Integer.class}))
-public class SQLStatementInterceptor implements Interceptor {
+public class SqlStatementInterceptor implements Interceptor {
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         StatementHandler handler = (StatementHandler) invocation.getTarget();

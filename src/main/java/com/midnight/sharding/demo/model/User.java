@@ -1,4 +1,4 @@
-package com.midnight.sharding.demo;
+package com.midnight.sharding.demo.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

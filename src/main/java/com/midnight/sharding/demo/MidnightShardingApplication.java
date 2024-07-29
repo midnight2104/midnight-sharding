@@ -1,7 +1,9 @@
-package com.midnight.sharding;
+package com.midnight.sharding.demo;
 
-import com.midnight.sharding.demo.User;
-import com.midnight.sharding.demo.UserMapper;
+import com.midnight.sharding.config.ShardingAutoConfiguration;
+import com.midnight.sharding.mybatis.ShardingMapperFactoryBean;
+import com.midnight.sharding.demo.model.User;
+import com.midnight.sharding.demo.mapper.UserMapper;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
@@ -12,7 +14,7 @@ import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
 @Import(ShardingAutoConfiguration.class)
-@MapperScan(value = "com.midnight.sharding.demo",
+@MapperScan(value = "com.midnight.sharding.demo.mapper",
         factoryBean = ShardingMapperFactoryBean.class)
 public class MidnightShardingApplication {
 

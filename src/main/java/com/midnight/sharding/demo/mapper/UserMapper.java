@@ -1,5 +1,6 @@
-package com.midnight.sharding.demo;
+package com.midnight.sharding.demo.mapper;
 
+import com.midnight.sharding.demo.model.User;
 import org.apache.ibatis.annotations.*;
 
 /**

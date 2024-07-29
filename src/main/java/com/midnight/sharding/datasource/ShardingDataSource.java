@@ -1,6 +1,9 @@
-package com.midnight.sharding;
+package com.midnight.sharding.datasource;
 
 import com.alibaba.druid.pool.DruidDataSourceFactory;
+import com.midnight.sharding.config.ShardingProperties;
+import com.midnight.sharding.engine.ShardingContext;
+import com.midnight.sharding.engine.ShardingResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 
