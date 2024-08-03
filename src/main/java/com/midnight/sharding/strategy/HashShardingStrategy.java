@@ -1,32 +1,33 @@
-package com.midnight.sharding.engine;
+package com.midnight.sharding.strategy;
 
 import groovy.lang.Closure;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class HashShardingStrategy implements ShardingStrategy {
-    private String shardingColumn;
-    private String algorithmExpression;
+
+public class HashShardingStrategy implements ShardingStrategy{
+
+    private final String shardingColumn;
+    private final String algorithmExpression;
 
     public HashShardingStrategy(Properties properties) {
         this.shardingColumn = properties.getProperty("shardingColumn");
         this.algorithmExpression = properties.getProperty("algorithmExpression");
     }
 
-
     @Override
-    public List<String> getShardingColumns() {
-        return Collections.singletonList(shardingColumn);
+    public List<String> getShardingColums() {
+        return List.of(this.shardingColumn);
     }
 
     @Override
     public String doSharding(List<String> availableTargetNames, String logicTableName, Map<String, Object> shardingParams) {
-        InlineExpressionParser parser = new InlineExpressionParser(InlineExpressionParser.handlePlaceHolder(algorithmExpression));
+        String expression = InlineExpressionParser.handlePlaceHolder(algorithmExpression);
+        InlineExpressionParser parser = new InlineExpressionParser(expression);
         Closure closure = parser.evaluateClosure();
-        closure.setProperty(shardingColumn, shardingParams.get(shardingColumn));
+        closure.setProperty(this.shardingColumn, shardingParams.get(this.shardingColumn));
         return closure.call().toString();
     }
 }

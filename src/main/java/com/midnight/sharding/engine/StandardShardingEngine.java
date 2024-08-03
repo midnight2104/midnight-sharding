@@ -1,67 +1,104 @@
 package com.midnight.sharding.engine;
 
+import com.alibaba.druid.sql.SQLUtils;
+import com.alibaba.druid.sql.ast.SQLExpr;
+import com.alibaba.druid.sql.ast.SQLName;
+import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.ast.expr.SQLIdentifierExpr;
+import com.alibaba.druid.sql.ast.statement.SQLInsertStatement;
+import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlSchemaStatVisitor;
 import com.midnight.sharding.config.ShardingProperties;
+import com.midnight.sharding.strategy.HashShardingStrategy;
+import com.midnight.sharding.strategy.ShardingStrategy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class StandardShardingEngine implements ShardingEngine {
-    private Map<String, List<String>> actualDatabaseNames = new HashMap<>();
-    private Map<String, List<String>> actualTableNames = new HashMap<>();
+    private final MultiValueMap<String, String> actualDatabaseNames = new LinkedMultiValueMap<>();
+    private final MultiValueMap<String, String> actualTableNames = new LinkedMultiValueMap<>();
     private Map<String, ShardingStrategy> databaseStrageys = new HashMap<>();
     private Map<String, ShardingStrategy> tableStrageys = new HashMap<>();
 
 
     public StandardShardingEngine(ShardingProperties properties) {
-        Map<String, Set<String>> databaseNames = new HashMap<>();
-        Map<String, Set<String>> tableNames = new HashMap<>();
 
         properties.getTables().forEach((table, tableProperties) -> {
             databaseStrageys.put(table, new HashShardingStrategy(tableProperties.getDatabaseStrategy()));
             tableStrageys.put(table, new HashShardingStrategy(tableProperties.getTableStrategy()));
-
-            if (!databaseNames.containsKey(table)) {
-                databaseNames.put(table, new LinkedHashSet<>());
-            }
-
             tableProperties.getActualDataNodes().forEach(actualDataNode -> {
                 String[] split = actualDataNode.split("\\.");
                 String databaseName = split[0];
                 String tableName = split[1];
 
-                if (!tableNames.containsKey(databaseName)) {
-                    tableNames.put(databaseName, new LinkedHashSet<>());
-                }
-                databaseNames.get(table).add(databaseName);
-                tableNames.get(databaseName).add(tableName);
+                actualDatabaseNames.add(databaseName, tableName);
+                actualTableNames.add(tableName, databaseName);
+
             });
+            databaseStrageys.put(table, new HashShardingStrategy(tableProperties.getDatabaseStrategy()));
+            tableStrageys.put(table, new HashShardingStrategy(tableProperties.getTableStrategy()));
+
         });
 
-        databaseNames.forEach((table, names) -> actualDatabaseNames.put(table, new ArrayList<>(names)));
-        tableNames.forEach((database, names) -> actualTableNames.put(database, new ArrayList<>(names)));
     }
 
     @Override
     public ShardingResult sharding(String sql, Object[] args) {
-        SqlParser parser = new SqlParser();
-        SqlParser.SqlSchema schema = parser.parse(sql, args);
-        String tableName = schema.getTableName();
-        Map<String, Object> shardingColumnsMap = schema.getShardingColumnsMap();
+        SQLStatement sqlStatement = SQLUtils.parseSingleMysqlStatement(sql);
 
-        ShardingStrategy databaseStrategy = databaseStrageys.get(tableName);
-        String targetDatabase = databaseStrategy.doSharding(actualDatabaseNames.get(tableName), tableName, shardingColumnsMap);
+        String table;
+        Map<String, Object> shardingColumnsMap;
+        if (sqlStatement instanceof SQLInsertStatement sqlInsertStatement) {
+            table = sqlInsertStatement.getTableName().getSimpleName();
+            shardingColumnsMap = getShardingColumnsMap(sqlInsertStatement, args);
+        } else {
+            MySqlSchemaStatVisitor visitor = new MySqlSchemaStatVisitor();
+            visitor.setParameters(List.of(args));
+            sqlStatement.accept(visitor);
 
-        ShardingStrategy tableStrategy = tableStrageys.get(tableName);
-        String targetTable = tableStrategy.doSharding(actualTableNames.get(targetDatabase), tableName, shardingColumnsMap);
+            LinkedHashSet<SQLName> sqlNames = new LinkedHashSet<>(visitor.getOriginalTables());
+            if (sqlNames.size() > 1) {
+                throw new RuntimeException("not support multi table sharding");
+            }
 
+            table = sqlNames.iterator().next().getSimpleName();
+            log.info(" visitor.getOriginalTables = " + table);
+            shardingColumnsMap = visitor.getConditions().stream()
+                    .collect(Collectors.toMap(k -> k.getColumn().getName(), v -> v.getValues().get(0)));
+            log.info(" visitor.getConditions = " + shardingColumnsMap);
+        }
+
+        ShardingStrategy databaseStrategy = databaseStrageys.get(table);
+        String targetDatabase = databaseStrategy.doSharding(actualDatabaseNames.get(table), table, shardingColumnsMap);
+
+        ShardingStrategy tableStrategy = tableStrageys.get(table);
+        String targetTable = tableStrategy.doSharding(actualTableNames.get(targetDatabase), table, shardingColumnsMap);
+
+
+        log.info(" ===>>> ");
         log.info(" ===>>> target db.table = " + targetDatabase + "." + targetTable);
+        log.info(" ===>>> ");
 
-        ShardingResult result = new ShardingResult();
-        result.setTargetDataSourceName(targetDatabase);
-        result.setTargetSqlStatement(sql.replace(tableName, targetTable));
-        result.setParameters(args);
+        return new ShardingResult(targetDatabase, sql.replace(table, targetTable));
+    }
 
-        return result;
+    private Map<String, Object> getShardingColumnsMap(SQLInsertStatement sqlInsertStatement, Object[] args) {
+        Map<String, Object> shardingColumnsMap = new HashMap<>();
+        List<SQLExpr> columns = sqlInsertStatement.getColumns();
+        for (int i = 0; i < columns.size(); i++) {
+            SQLExpr column = columns.get(i);
+            SQLIdentifierExpr columnExpr = (SQLIdentifierExpr) column;
+            String columnName = columnExpr.getSimpleName();
+            shardingColumnsMap.put(columnName, args[i]);
+        }
+
+        return shardingColumnsMap;
     }
 }

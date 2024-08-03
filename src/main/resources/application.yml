@@ -13,17 +13,18 @@ spring:
         password: 123456
     tables:
       user:
-        actualDataNodes: ds0.user0, ds0.user1, ds0.user2, ds1.user0, ds1.user1, ds1.user2
+        actualDataNodes: ds0.user0,ds0.user1,ds0.user2,ds1.user0,ds1.user1,ds1.user2
         databaseStrategy:
           shardingColumn: id
           algorithmExpression: ds${id % 2}
         tableStrategy:
           shardingColumn: id
           algorithmExpression: user${id % 3}
-
-mybatis:
-  #  mapper-locations: classpath:mapper/*Mapper.xml
-  type-aliases-package: com.midnight.sharding.demo
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    default-statement-timeout: 5000
+      t_order:
+        actualDataNodes: ds0.t_order0,ds0.t_order1,ds1.t_order0,ds1.t_order1
+        databaseStrategy:
+          shardingColumn: id
+          algorithmExpression: ds${id % 2}
+        tableStrategy:
+          shardingColumn: uid
+          algorithmExpression: t_order${uid % 2}

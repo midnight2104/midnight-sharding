@@ -1,4 +1,4 @@
-package com.midnight.sharding.engine;
+package com.midnight.sharding.strategy;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
